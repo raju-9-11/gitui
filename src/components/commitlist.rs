@@ -794,25 +794,47 @@ impl DrawableComponent for CommitList {
 			self.commits.len(),
 		);
 
-		f.render_widget(
-			Paragraph::new(
-				self.get_text(
-					height_in_lines,
-					current_size.0 as usize,
-				),
-			)
-			.block(
-				Block::default()
-					.borders(Borders::ALL)
-					.title(Span::styled(
-						title.as_str(),
-						self.theme.title(true),
-					))
-					.border_style(self.theme.block(true)),
-			)
-			.alignment(Alignment::Left),
-			area,
-		);
+		let count = self.commits.len();
+
+		if count == 0 {
+			f.render_widget(
+				Paragraph::new(Span::styled(
+					strings::log_empty(),
+					self.theme.text(false, false),
+				))
+				.block(
+					Block::default()
+						.borders(Borders::ALL)
+						.title(Span::styled(
+							title.as_str(),
+							self.theme.title(true),
+						))
+						.border_style(self.theme.block(true)),
+				)
+				.alignment(Alignment::Center),
+				area,
+			);
+		} else {
+			f.render_widget(
+				Paragraph::new(
+					self.get_text(
+						height_in_lines,
+						current_size.0 as usize,
+					),
+				)
+				.block(
+					Block::default()
+						.borders(Borders::ALL)
+						.title(Span::styled(
+							title.as_str(),
+							self.theme.title(true),
+						))
+						.border_style(self.theme.block(true)),
+				)
+				.alignment(Alignment::Left),
+				area,
+			);
+		}
 
 		draw_scrollbar(
 			f,
