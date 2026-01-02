@@ -15,6 +15,8 @@ pub enum RepoState {
 	///
 	Revert,
 	///
+	CherryPick,
+	///
 	Other,
 }
 
@@ -25,6 +27,8 @@ impl From<RepositoryState> for RepoState {
 			RepositoryState::Merge => Self::Merge,
 			RepositoryState::Revert => Self::Revert,
 			RepositoryState::RebaseMerge => Self::Rebase,
+			RepositoryState::CherryPick
+			| RepositoryState::CherryPickSequence => Self::CherryPick,
 			_ => {
 				log::warn!("state not supported yet: {state:?}");
 				Self::Other

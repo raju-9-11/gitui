@@ -57,6 +57,7 @@ pub enum Action {
 	AbortMerge,
 	AbortRebase,
 	AbortRevert,
+	AbortCherryPick,
 	UndoCommit,
 }
 

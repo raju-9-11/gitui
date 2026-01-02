@@ -1018,7 +1018,9 @@ impl App {
 			Action::PullMerge { rebase, .. } => {
 				self.pull_popup.try_conflict_free_merge(rebase);
 			}
-			Action::AbortRevert | Action::AbortMerge => {
+			Action::AbortRevert
+			| Action::AbortMerge
+			| Action::AbortCherryPick => {
 				self.status_tab.revert_pending_state();
 			}
 			Action::AbortRebase => {
