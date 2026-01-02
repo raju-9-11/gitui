@@ -17,7 +17,12 @@ use crate::{
 use anyhow::Result;
 use asyncgit::{hash, sync::CommitId, StatusItem, StatusItemType};
 use crossterm::event::Event;
-use ratatui::{layout::Rect, text::Span, Frame};
+use ratatui::{
+	layout::{Alignment, Rect},
+	text::Span,
+	widgets::{Block, Borders, Paragraph},
+	Frame,
+};
 use std::{borrow::Cow, cell::Cell, path::Path};
 
 //TODO: use new `filetreelist` crate
@@ -364,44 +369,73 @@ impl DrawableComponent for StatusTreeComponent {
 				selection_offset_visible,
 			) = self.build_vec_text_draw_info_for_drawing();
 
-			let select = self
-				.tree
-				.selection
-				.map(|idx| idx.saturating_sub(selection_offset))
-				.unwrap_or_default();
-			let tree_height = r.height.saturating_sub(2) as usize;
-			self.tree.window_height.set(Some(tree_height));
+			if vec_draw_text_info.is_empty() {
+				ui::draw_list_block(
+					f,
+					r,
+					Block::default()
+						.title(Span::styled(
+							self.title.as_str(),
+							self.theme.title(self.focused),
+						))
+						.borders(Borders::ALL)
+						.border_style(self.theme.block(self.focused)),
+					Vec::<String>::new().into_iter(),
+				);
 
-			self.scroll_top.set(ui::calc_scroll_top(
-				self.scroll_top.get(),
-				tree_height,
-				select.saturating_sub(selection_offset_visible),
-			));
+				let empty_msg = strings::status_empty();
 
-			let items = vec_draw_text_info
-				.iter()
-				.enumerate()
-				.filter_map(|(index, draw_text_info)| {
-					Self::item_to_text(
-						&draw_text_info.name,
-						draw_text_info.indent as usize,
-						draw_text_info.visible,
-						draw_text_info.item_kind,
-						r.width,
-						self.show_selection && select == index,
-						&self.theme,
-					)
-				})
-				.skip(self.scroll_top.get());
+				let paragraph = Paragraph::new(Span::styled(
+					empty_msg,
+					self.theme.text(false, false),
+				))
+				.alignment(Alignment::Center);
 
-			ui::draw_list(
-				f,
-				r,
-				self.title.as_str(),
-				items,
-				self.focused,
-				&self.theme,
-			);
+				let center_y =
+					r.y + r.height.saturating_div(2).saturating_sub(1);
+				let rect = Rect::new(r.x, center_y, r.width, 1);
+
+				f.render_widget(paragraph, rect);
+			} else {
+				let select = self
+					.tree
+					.selection
+					.map(|idx| idx.saturating_sub(selection_offset))
+					.unwrap_or_default();
+				let tree_height = r.height.saturating_sub(2) as usize;
+				self.tree.window_height.set(Some(tree_height));
+
+				self.scroll_top.set(ui::calc_scroll_top(
+					self.scroll_top.get(),
+					tree_height,
+					select.saturating_sub(selection_offset_visible),
+				));
+
+				let items = vec_draw_text_info
+					.iter()
+					.enumerate()
+					.filter_map(|(index, draw_text_info)| {
+						Self::item_to_text(
+							&draw_text_info.name,
+							draw_text_info.indent as usize,
+							draw_text_info.visible,
+							draw_text_info.item_kind,
+							r.width,
+							self.show_selection && select == index,
+							&self.theme,
+						)
+					})
+					.skip(self.scroll_top.get());
+
+				ui::draw_list(
+					f,
+					r,
+					self.title.as_str(),
+					items,
+					self.focused,
+					&self.theme,
+				);
+			}
 		}
 
 		Ok(())
@@ -679,5 +713,40 @@ mod tests {
 			.expect("Draw failed");
 
 		assert_eq!(ftc.scroll_top.get(), 0); // should still be at top
+	}
+
+	#[test]
+	fn test_empty_state_draws_message() {
+		let backend = ratatui::backend::TestBackend::new(20, 10);
+		let mut terminal = ratatui::Terminal::new(backend).unwrap();
+
+		let mut ftc = StatusTreeComponent::new(
+			&Environment::test_env(),
+			"title",
+			true,
+		);
+		// Force visibility to true as new() sets it to false
+		ftc.show().unwrap();
+		ftc.update(&[]).unwrap();
+
+		terminal
+			.draw(|f| {
+				ftc.draw(f, Rect::new(0, 0, 20, 10)).unwrap();
+			})
+			.unwrap();
+
+		let buffer = terminal.backend().buffer();
+		let mut found = false;
+		for y in 0..10 {
+			let line_text: String = (0..20)
+				.map(|x| buffer.get(x, y).symbol())
+				.collect();
+			if line_text.contains("No changes") {
+				found = true;
+				break;
+			}
+		}
+
+		assert!(found, "Empty state message not found in buffer");
 	}
 }

@@ -1934,3 +1934,11 @@ pub mod commands {
 		)
 	}
 }
+
+pub fn status_empty() -> String {
+	"No changes".to_string()
+}
+
+pub fn log_empty() -> String {
+	"No commits".to_string()
+}
