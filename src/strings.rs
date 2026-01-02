@@ -188,6 +188,9 @@ pub fn confirm_title_abortmerge() -> String {
 pub fn confirm_title_abortrevert() -> String {
 	"Abort revert?".to_string()
 }
+pub fn confirm_title_abortcherrypick() -> String {
+	"Abort cherry pick?".to_string()
+}
 pub fn confirm_msg_revertchanges() -> String {
 	"This will revert all uncommitted changes. Are you sure?"
 		.to_string()
@@ -913,6 +916,19 @@ pub mod commands {
 		)
 	}
 
+	pub fn abort_cherry_pick(
+		key_config: &SharedKeyConfig,
+	) -> CommandText {
+		CommandText::new(
+			format!(
+				"Abort cherry pick [{}]",
+				key_config.get_hint(key_config.keys.abort_merge),
+			),
+			"abort ongoing cherry pick",
+			CMD_GROUP_GENERAL,
+		)
+	}
+
 	pub fn view_submodules(
 		key_config: &SharedKeyConfig,
 	) -> CommandText {
@@ -1548,6 +1564,18 @@ pub mod commands {
 					.get_hint(key_config.keys.status_reset_item),
 			),
 			"revert commit",
+			CMD_GROUP_LOG,
+		)
+	}
+	pub fn cherry_pick_commit(
+		key_config: &SharedKeyConfig,
+	) -> CommandText {
+		CommandText::new(
+			format!(
+				"Cherry Pick [{}]",
+				key_config.get_hint(key_config.keys.cherry_pick),
+			),
+			"cherry pick commit",
 			CMD_GROUP_LOG,
 		)
 	}

@@ -280,6 +280,16 @@ impl Status {
 						.unwrap_or_default(),
 				)
 			}
+			RepoState::CherryPick => {
+				format!(
+					"Cherry-Pick {}",
+					sync::cherry_pick_head(repo)
+						.ok()
+						.as_ref()
+						.map(CommitId::get_short_string)
+						.unwrap_or_default(),
+				)
+			}
 			_ => format!("{state:?}"),
 		}
 	}
@@ -635,6 +645,10 @@ impl Status {
 		self.git_state == RepoState::Revert
 	}
 
+	fn pending_cherry_pick(&self) -> bool {
+		self.git_state == RepoState::CherryPick
+	}
+
 	pub fn revert_pending_state(&self) {
 		try_or_popup!(
 			self,
@@ -800,6 +814,14 @@ impl Component for Status {
 			));
 
 			out.push(CommandInfo::new(
+				strings::commands::abort_cherry_pick(
+					&self.key_config,
+				),
+				true,
+				self.pending_cherry_pick() || force_all,
+			));
+
+			out.push(CommandInfo::new(
 				strings::commands::view_submodules(&self.key_config),
 				true,
 				true,
@@ -926,6 +948,12 @@ impl Component for Status {
 						self.queue.push(
 							InternalEvent::ConfirmAction(
 								Action::AbortRevert,
+							),
+						);
+					} else if self.pending_cherry_pick() {
+						self.queue.push(
+							InternalEvent::ConfirmAction(
+								Action::AbortCherryPick,
 							),
 						);
 					}
