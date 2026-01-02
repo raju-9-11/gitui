@@ -6,6 +6,7 @@ use crate::{
 		EventState, ScrollType,
 	},
 	keys::{key_match, SharedKeyConfig},
+	options::SharedOptions,
 	popups::{FileRevOpen, InspectCommitOpen},
 	queue::{InternalEvent, Queue, StackablePopupOpen},
 	string_utils::tabs_to_spaces,
@@ -97,6 +98,7 @@ pub struct BlameFilePopup {
 	app_sender: Sender<AsyncAppNotification>,
 	git_sender: Sender<AsyncGitNotification>,
 	repo: RepoPathRef,
+	options: SharedOptions,
 }
 
 impl DrawableComponent for BlameFilePopup {
@@ -370,6 +372,7 @@ impl BlameFilePopup {
 			git_sender: env.sender_git.clone(),
 			blame: None,
 			repo: env.repo.clone(),
+			options: env.options.clone(),
 		}
 	}
 
@@ -552,6 +555,7 @@ impl BlameFilePopup {
 
 	///
 	fn get_rows(&self, width: usize) -> Vec<Row<'_>> {
+		let tab_size = self.options.borrow().tab_size();
 		self.blame
 			.as_ref()
 			.and_then(|blame| blame.result())
@@ -571,6 +575,7 @@ impl BlameFilePopup {
 							(blame_hunk.as_ref(), line.as_ref()),
 							file_blame,
 							styled_text.as_ref(),
+							tab_size,
 						)
 					})
 					.collect()
@@ -596,7 +601,8 @@ impl BlameFilePopup {
 			.iter()
 			.map(|l| l.1.clone())
 			.collect::<Vec<_>>();
-		let mut text = tabs_to_spaces(raw_lines.join("\n"));
+		let tab_size = self.options.borrow().tab_size();
+		let mut text = tabs_to_spaces(raw_lines.join("\n"), tab_size);
 		text.push('\n');
 
 		job.spawn(AsyncSyntaxJob::new(
@@ -613,6 +619,7 @@ impl BlameFilePopup {
 		hunk_and_line: (Option<&BlameHunk>, &str),
 		file_blame: &'a SyntaxFileBlame,
 		styled_text: Option<&Text<'a>>,
+		tab_size: usize,
 	) -> Row<'a> {
 		let (hunk_for_line, line) = hunk_and_line;
 
@@ -640,8 +647,11 @@ impl BlameFilePopup {
 
 		let text_cell = styled_text.as_ref().map_or_else(
 			|| {
-				Cell::from(tabs_to_spaces(String::from(line)))
-					.style(self.theme.text(true, false))
+				Cell::from(tabs_to_spaces(
+					String::from(line),
+					tab_size,
+				))
+				.style(self.theme.text(true, false))
 			},
 			|styled_text| {
 				let styled_text =

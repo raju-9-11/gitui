@@ -229,6 +229,15 @@ impl Revlog {
 		Ok(())
 	}
 
+	fn cherry_pick_commit(&self) -> Result<()> {
+		if let Some(c) = self.selected_commit() {
+			sync::cherry_pick_commit(&self.repo.borrow(), c)?;
+			self.queue.push(InternalEvent::TabSwitchStatus);
+		}
+
+		Ok(())
+	}
+
 	fn inspect_commit(&self) {
 		if let Some(commit_id) = self.selected_commit() {
 			let tags =
@@ -522,6 +531,18 @@ impl Component for Revlog {
 					return Ok(EventState::Consumed);
 				} else if key_match(
 					k,
+					self.key_config.keys.cherry_pick,
+				) && !self.is_search_pending()
+				{
+					try_or_popup!(
+						self,
+						"cherry pick error:",
+						self.cherry_pick_commit()
+					);
+
+					return Ok(EventState::Consumed);
+				} else if key_match(
+					k,
 					self.key_config.keys.open_file_tree,
 				) && !self.is_search_pending()
 				{
@@ -710,6 +731,12 @@ impl Component for Revlog {
 
 		out.push(CommandInfo::new(
 			strings::commands::revert_commit(&self.key_config),
+			self.selected_commit().is_some(),
+			(self.visible && !self.is_search_pending()) || force_all,
+		));
+
+		out.push(CommandInfo::new(
+			strings::commands::cherry_pick_commit(&self.key_config),
 			self.selected_commit().is_some(),
 			(self.visible && !self.is_search_pending()) || force_all,
 		));

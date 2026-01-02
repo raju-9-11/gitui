@@ -184,6 +184,7 @@ impl DiffComponent {
 
 			self.diff = Some(diff);
 
+			let tab_size = self.options.borrow().tab_size();
 			self.longest_line = self
 				.diff
 				.iter()
@@ -192,6 +193,7 @@ impl DiffComponent {
 				.map(|line| {
 					let converted_content = tabs_to_spaces(
 						line.content.as_ref().to_string(),
+						tab_size,
 					);
 
 					converted_content.len()
@@ -337,6 +339,8 @@ impl DiffComponent {
 				let mut line_cursor = 0_usize;
 				let mut lines_added = 0_usize;
 
+				let tab_size = self.options.borrow().tab_size();
+
 				for (i, hunk) in diff.hunks.iter().enumerate() {
 					let hunk_selected = self.focused()
 						&& self.selected_hunk.is_some_and(|s| s == i);
@@ -369,6 +373,7 @@ impl DiffComponent {
 									&self.theme,
 									self.horizontal_scroll
 										.get_right(),
+									tab_size,
 								));
 								lines_added += 1;
 							}
@@ -427,6 +432,7 @@ impl DiffComponent {
 		end_of_hunk: bool,
 		theme: &SharedTheme,
 		scrolled_right: usize,
+		tab_size: usize,
 	) -> Line<'a> {
 		let style = theme.diff_hunk_marker(selected_hunk);
 
@@ -452,7 +458,10 @@ impl DiffComponent {
 			if !is_content_line && line.content.as_ref().is_empty() {
 				theme.line_break()
 			} else {
-				tabs_to_spaces(line.content.as_ref().to_string())
+				tabs_to_spaces(
+					line.content.as_ref().to_string(),
+					tab_size,
+				)
 			};
 		let content = trim_offset(&content, scrolled_right);
 
@@ -969,7 +978,8 @@ mod tests {
 					false,
 					false,
 					&default_theme,
-					0
+					0,
+					4
 				)
 				.spans
 				.last()
@@ -1000,7 +1010,7 @@ mod tests {
 
 			assert_eq!(
 				DiffComponent::get_line_to_add(
-					4, &diff_line, false, false, false, &theme, 0
+					4, &diff_line, false, false, false, &theme, 0, 4
 				)
 				.spans
 				.last()

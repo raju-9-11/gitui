@@ -77,35 +77,19 @@ impl ExternalEditorPopup {
 			.or_else(|| env::var(environment_options[2]).ok())
 			.unwrap_or_else(|| String::from("vi"));
 
-		// TODO: proper handling arguments containing whitespaces
-		// This does not do the right thing if the input is `editor --something "with spaces"`
+		let mut editor_args = shell_words::split(&editor)?;
 
-		// deal with "editor name with spaces" p1 p2 p3
-		// and with "editor_no_spaces" p1 p2 p3
-		// does not address spaces in pn
-		let mut echars = editor.chars().peekable();
-
-		let first_char = *echars.peek().ok_or_else(|| {
-			anyhow!(
+		if editor_args.is_empty() {
+			return Err(anyhow!(
 				"editor env variable found empty: {}",
 				environment_options.join(" or ")
-			)
-		})?;
-		let command: String = if first_char == '\"' {
-			echars
-				.by_ref()
-				.skip(1)
-				.take_while(|c| *c != '\"')
-				.collect()
-		} else {
-			echars.by_ref().take_while(|c| *c != ' ').collect()
-		};
+			));
+		}
 
-		let remainder_str = echars.collect::<String>();
-		let remainder = remainder_str.split_whitespace();
+		let command = editor_args.remove(0);
 
 		let mut args: Vec<&OsStr> =
-			remainder.map(OsStr::new).collect();
+			editor_args.iter().map(OsStr::new).collect();
 
 		args.push(path.as_os_str());
 

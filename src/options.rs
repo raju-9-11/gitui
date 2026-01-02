@@ -16,12 +16,26 @@ use std::{
 	rc::Rc,
 };
 
-#[derive(Default, Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 struct OptionsData {
 	pub tab: usize,
 	pub diff: DiffOptions,
 	pub status_show_untracked: Option<ShowUntrackedFilesConfig>,
 	pub commit_msgs: Vec<String>,
+	#[serde(default)]
+	pub tab_size: usize,
+}
+
+impl Default for OptionsData {
+	fn default() -> Self {
+		Self {
+			tab: 0,
+			diff: DiffOptions::default(),
+			status_show_untracked: None,
+			commit_msgs: Vec::new(),
+			tab_size: 4,
+		}
+	}
 }
 
 const COMMIT_MSG_HISTORY_LENGTH: usize = 20;
@@ -135,6 +149,10 @@ impl Options {
 
 			Some(self.data.commit_msgs[index].clone())
 		}
+	}
+
+	pub const fn tab_size(&self) -> usize {
+		self.data.tab_size
 	}
 
 	fn save(&self) {

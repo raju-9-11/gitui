@@ -5,6 +5,7 @@ use super::{
 use crate::{
 	app::Environment,
 	keys::SharedKeyConfig,
+	options::SharedOptions,
 	string_utils::tabs_to_spaces,
 	strings,
 	ui::{
@@ -39,6 +40,7 @@ pub struct SyntaxTextComponent {
 	paragraph_state: Cell<ParagraphState>,
 	focused: bool,
 	theme: SharedTheme,
+	options: SharedOptions,
 }
 
 impl SyntaxTextComponent {
@@ -55,6 +57,7 @@ impl SyntaxTextComponent {
 			key_config: env.key_config.clone(),
 			theme: env.theme.clone(),
 			repo: env.repo.clone(),
+			options: env.options.clone(),
 		}
 	}
 
@@ -110,7 +113,8 @@ impl SyntaxTextComponent {
 			//TODO: fetch file content async as well
 			match sync::tree_file_content(&self.repo.borrow(), item) {
 				Ok(content) => {
-					let content = tabs_to_spaces(content);
+					let tab_size = self.options.borrow().tab_size();
+					let content = tabs_to_spaces(content, tab_size);
 					self.syntax_progress =
 						Some(ProgressPercent::empty());
 					self.async_highlighting.spawn(

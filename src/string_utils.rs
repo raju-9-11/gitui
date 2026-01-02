@@ -15,10 +15,11 @@ pub fn trim_length_left(s: &str, width: usize) -> &str {
 	s
 }
 
-//TODO: allow customize tabsize
-pub fn tabs_to_spaces(input: String) -> String {
+///
+pub fn tabs_to_spaces(input: String, tab_size: usize) -> String {
 	if input.contains('\t') {
-		input.replace('\t', "  ")
+		let spaces = " ".repeat(tab_size);
+		input.replace('\t', &spaces)
 	} else {
 		input
 	}
@@ -44,11 +45,18 @@ pub fn trim_offset(src: &str, mut offset: usize) -> &str {
 mod test {
 	use pretty_assertions::assert_eq;
 
-	use crate::string_utils::trim_length_left;
+	use crate::string_utils::{tabs_to_spaces, trim_length_left};
 
 	#[test]
 	fn test_trim() {
 		assert_eq!(trim_length_left("👍foo", 3), "foo");
 		assert_eq!(trim_length_left("👍foo", 4), "foo");
+	}
+
+	#[test]
+	fn test_tabs_to_spaces() {
+		assert_eq!(tabs_to_spaces("foo\tbar".into(), 2), "foo  bar");
+		assert_eq!(tabs_to_spaces("foo\tbar".into(), 4), "foo    bar");
+		assert_eq!(tabs_to_spaces("foobar".into(), 4), "foobar");
 	}
 }

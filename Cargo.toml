@@ -67,6 +67,7 @@ ron = "0.12"
 scopeguard = "1.2"
 scopetime = { path = "./scopetime", version = "0.1" }
 serde = "1.0"
+shell-words = "1.1.1"
 shellexpand = "3.1"
 simplelog = { version = "0.12", default-features = false }
 struct-patch = "0.10"
